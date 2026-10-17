@@ -23,7 +23,8 @@
     "lint:py": "ruff check .",
     "format": "prettier --write . && ruff format .",
     "format:check": "prettier --check . && ruff format --check .",
-    "mcp": "node mcp/server.js"
+    "mcp": "node mcp/server.js",
+    "setup": "node scripts/setup.js"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",

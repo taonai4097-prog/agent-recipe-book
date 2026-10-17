@@ -40,6 +40,77 @@ node mcp/server.js
 curl https://laoyang4097.github.io/agent-recipe-book/api/experiences.json
 ```
 
+## 接入：让 Agent 稳定用上本库（重要）
+
+本库通过 MCP 提供。但 MCP 的 `initialize.instructions` 字段**只有在客户端愿意把它注入
+模型上下文时才生效**——这一步不归本仓库控制。为了保证"下载本项目的人"能稳定地让 Agent
+遵守使用规矩，请用下面的 setup 脚本，把规矩写进**你自己的项目**的客户端说明书文件。
+只要客户端读这个文件，规矩就一定到得了模型眼前。
+
+### 第一步：连上 MCP
+
+在你的客户端 MCP 配置里加入（路径换成你实际放本库的位置）：
+
+```json
+{
+  "mcpServers": {
+    "agent-recipe-book": {
+      "command": "node",
+      "args": ["/绝对路径/agent-recipe-book/mcp/server.js"],
+      "env": { "RECIPE_BOOK_WRITE": "1" }
+    }
+  }
+}
+```
+
+> 只读使用可不加 `RECIPE_BOOK_WRITE`；要投稿（写经验）必须加 `1`，且**改完重启会话**才生效。
+
+### 第二步：把使用规矩写进你的项目
+
+在你**自己的项目根目录**运行（不是在 recipe-book 仓库里）：
+
+```bash
+# 自动检测你的客户端并写入对应说明书文件，会先让你确认
+node /绝对路径/agent-recipe-book/scripts/setup.js
+
+# 非交互 / CI 环境跳过确认
+node /绝对路径/agent-recipe-book/scripts/setup.js --yes
+
+# 只想看会做什么、不写文件
+node /绝对路径/agent-recipe-book/scripts/setup.js --dry-run
+```
+
+脚本会做的事：
+
+1. 检测你用的客户端（`.claude/` 或 `CLAUDE.md` → Claude Code；`.workbuddy/`、`.codebuddy/`
+   或 `CODEBUDDY.md` → WorkBuddy；**已存在** `.github/copilot-instructions.md` → GitHub Copilot；
+   都不是 → 落到覆盖面最广的 `AGENTS.md`）。
+2. 把"使用规矩"那一段（带 `agent-recipe-book:rules` 哨兵标记）展示给你看。
+3. **等你确认后**写进对应文件；重复运行只会整体替换、不会重复叠加（幂等）。
+
+> 客户端判错了？用 `--client agents|claude|copilot|workbuddy` 强制指定，或用 `--file <路径>`
+> 直接指定写入文件。注意：脚本**不会**因为你的项目里有 `.github/` 就判定你在用 Copilot
+> ——那个目录通常只是放 CI 配置，据此误判会把规矩写进没人读的文件里。
+
+> 不想跑脚本也行：直接把 [`scripts/alias-files/`](scripts/alias-files/) 下对应客户端的文件
+> 内容，复制粘贴进你项目的说明书文件即可。
+
+### 第三步：重启会话
+
+写完说明书文件后，**重启你的 Agent 会话**，让它重新读取说明书文件，规矩即生效。
+
+### 各客户端读哪个文件（已核实，非猜测）
+
+| 客户端 | 读取的文件 | 依据 |
+|---|---|---|
+| WorkBuddy / CodeBuddy | `CODEBUDDY.md`（根目录，全文进上下文）；**没有它时才回落读 `AGENTS.md`** | 官方「规则」页、CLI 记忆页 |
+| Claude Code | `CLAUDE.md`（不读 `AGENTS.md`，官方建议在 `CLAUDE.md` 里 `@AGENTS.md` 导入） | 官方行为 |
+| GitHub Copilot | `.github/copilot-instructions.md` | 官方行为 |
+| Codex / Cursor / Gemini CLI / Aider / Zed 等 | `AGENTS.md` | 跨工具约定 |
+
+> ⚠️ **WorkBuddy 用户二选一就好，别两个都建**：一旦建了 `CODEBUDDY.md`，WorkBuddy 就不再
+> 回落到 `AGENTS.md`，两份内容迟早各改各的。只用一个客户端时，保留 `AGENTS.md` 最省事。
+
 ## 凭什么说它有用
 
 我们没停在"我觉得有用"，而是做了一次对照实验：
@@ -102,7 +173,9 @@ agent-recipe-book/
 ├── assets/            # 网页样式与脚本（app.js 以 ES Module 加载）
 ├── lib/               # ★ 共享检索内核 search.js —— 网站 / MCP / Agent 一份实现
 ├── mcp/               # ★ 只读 MCP Server（server.js + 挂载说明 README.md）
-├── tests/             # 回归测试（search-baseline.js / mcp-smoke.js）
+├── scripts/           # 接入脚本 setup.js（把使用规矩写进下游项目的客户端说明书）
+│   └── alias-files/   # 不想跑脚本时，手动复制的客户端说明书模板（4 份）
+├── tests/             # 回归测试（search-baseline.js / mcp-smoke.js …）
 ├── api/
 │   ├── ingest.py      # JSON→.md 渲染 + rebuild 索引（核心脚本）
 │   └── experiences.json   # 全量结构化数据（由 recipes/ 派生，网页与 Agent 消费）
