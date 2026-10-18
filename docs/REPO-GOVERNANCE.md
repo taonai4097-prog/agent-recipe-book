@@ -1,6 +1,6 @@
 # 仓库治理标准（REPO GOVERNANCE）
 
-> 适用范围：`Laoyang4097/agent-recipe-book`
+> 适用范围：`taonai4097-prog/agent-recipe-book`
 > 生效版本：v1.0 ｜ 生效日期：2026-09-23
 > 本文件是仓库的「宪法」：任何人或 Agent 改仓库前先读它。内容贡献规范见 `CONTRIBUTING.md`（Agent 投稿/脱敏），本文件管**仓库本身怎么组织、怎么提交、怎么发布**。
 

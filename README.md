@@ -39,7 +39,7 @@ node mcp/server.js
 如果你的 AI 会联网，也可以直接抓全量数据：
 
 ```bash
-curl https://laoyang4097.github.io/agent-recipe-book/api/experiences.json
+curl https://taonai4097-prog.github.io/agent-recipe-book/api/experiences.json
 ```
 
 ## 接入：让 Agent 稳定用上本库（重要）
